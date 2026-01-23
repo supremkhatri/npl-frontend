@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import match_list, add_match
+from .views import match_list_api
 
 urlpatterns = [
-    path("add/", add_match, name="add_match"),
-    path("", match_list, name="match_list"),
+    
+    path("", match_list_api, name="match_list_api"),
 ]

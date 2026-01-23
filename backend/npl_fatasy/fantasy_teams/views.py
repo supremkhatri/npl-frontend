@@ -1,7 +1,8 @@
-from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.shortcuts import redirect
 from django.db import connection
 from users.auth import login_required
-
+import json
 
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]
@@ -9,8 +10,163 @@ def dictfetchall(cursor):
 
 
 @login_required
-def view_fantasy_team(request, match_id):
+def match_list_api(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                m.match_id,
+                m.match_date,
+                t1.team_name AS team1,
+                t2.team_name AS team2
+            FROM matches m
+            JOIN teams t1 ON m.team_1 = t1.team_id
+            JOIN teams t2 ON m.team_2 = t2.team_id
+            ORDER BY m.match_date DESC
+        """)
+        matches = dictfetchall(cursor)
 
+    return JsonResponse({"matches": matches})
+
+
+@login_required
+def create_fantasy_team(request, match_id):
+    user_id = request.session["user_id"]
+    fantasy_team_id = f"{user_id}_{match_id}"
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 1 FROM fantasy_teams
+            WHERE fantasy_team_id = %s
+        """, [fantasy_team_id])
+
+        exists = cursor.fetchone()
+
+        if not exists:
+            cursor.execute("""
+                INSERT INTO fantasy_teams
+                (fantasy_team_id, user_id, match_id, total_points)
+                VALUES (%s, %s, %s, 0)
+            """, [fantasy_team_id, user_id, match_id])
+            return JsonResponse({
+                "status": "created",
+                "redirect": "select"
+            })
+
+    return JsonResponse({"status": "exists",
+        "redirect": "edit"})
+
+
+@login_required
+def select_players_api(request, match_id):
+    user_id = request.session["user_id"]
+    fantasy_team_id = f"{user_id}_{match_id}"
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 1 FROM fantasy_teams
+            WHERE fantasy_team_id = %s
+        """, [fantasy_team_id])
+
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO fantasy_teams
+                (fantasy_team_id, user_id, match_id, total_points)
+                VALUES (%s, %s, %s, 0)
+            """, [fantasy_team_id, user_id, match_id])
+
+    if request.method == "GET":
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    p.player_id,
+                    p.player_name,
+                    p.role,
+                    p.cost,
+                    t.team_name,
+                    t.team_id
+                FROM players p
+                JOIN teams t ON p.team_id = t.team_id
+                WHERE p.team_id IN (
+                    SELECT team_1 FROM matches WHERE match_id = %s
+                    UNION
+                    SELECT team_2 FROM matches WHERE match_id = %s
+                )
+                ORDER BY t.team_name, p.player_name
+            """, [match_id, match_id])
+
+            players = dictfetchall(cursor)
+
+        return JsonResponse({"players": players})
+
+    if request.method == "POST":
+        data = json.loads(request.body)
+        selected_players = data.get("players", [])
+        captain = data.get("captain")
+        vice_captain = data.get("vice_captain")
+
+        # ---------- VALIDATIONS ----------
+        if len(selected_players) != 7:
+            return JsonResponse({"error": "You must select exactly 7 players."}, status=400)
+
+        if not captain or not vice_captain:
+            return JsonResponse({"error": "Captain and Vice-Captain are required."}, status=400)
+
+        if captain == vice_captain:
+            return JsonResponse({"error": "Captain and Vice-Captain must be different."}, status=400)
+
+        if captain not in selected_players or vice_captain not in selected_players:
+            return JsonResponse({"error": "Captain and Vice-Captain must be selected players."}, status=400)
+
+        # Fetch selected player details
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT player_id, role, team_id, cost
+                FROM players
+                WHERE player_id = ANY(%s)
+            """, [selected_players])
+
+            selected_data = dictfetchall(cursor)
+
+        team_count = {}
+        role_count = {}
+        total_cost = 0
+
+        for p in selected_data:
+            team_count[p["team_id"]] = team_count.get(p["team_id"], 0) + 1
+            role_count[p["role"]] = role_count.get(p["role"], 0) + 1
+            total_cost += p["cost"]
+
+        if any(count > 4 for count in team_count.values()):
+            return JsonResponse({"error": "Maximum 4 players allowed from a single team."}, status=400)
+
+        if any(count > 3 for count in role_count.values()):
+            return JsonResponse({"error": "Maximum 3 players allowed per role."}, status=400)
+
+        if total_cost > 60:
+            return JsonResponse({"error": f"Total cost exceeded! Current cost: {total_cost}"}, status=400)
+
+        # ---------- SAVE SELECTION ----------
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM fantasy_team_players
+                WHERE fantasy_team_id = %s
+            """, [fantasy_team_id])
+
+            for pid in selected_players:
+                is_captain = (pid == captain)
+                is_vice_captain = (pid == vice_captain)
+
+                cursor.execute("""
+                    INSERT INTO fantasy_team_players
+                    (fantasy_team_id, player_id, is_captain, is_vice_captain)
+                    VALUES (%s, %s, %s, %s)
+                """, [fantasy_team_id, pid, is_captain, is_vice_captain])
+
+        return JsonResponse({"success": True})
+
+
+@login_required
+def fantasy_team_api(request, match_id):
     user_id = request.session["user_id"]
     fantasy_team_id = f"{user_id}_{match_id}"
 
@@ -35,23 +191,11 @@ def view_fantasy_team(request, match_id):
 
         players = dictfetchall(cursor)
 
-    if not players:
-        return render(request, "view_team.html", {
-            "error": "Fantasy team not created for this match."
-        })
-
-    total_cost = sum(p["cost"] for p in players)
-
-    return render(request, "view_team.html", {
-        "players": players,
-        "total_cost": total_cost,
-        "match_id": match_id
-    })
+    return JsonResponse({"players": players})
 
 
 @login_required
-def fantasy_team_results(request, match_id):
-
+def fantasy_team_results_api(request, match_id):
     user_id = request.session["user_id"]
     fantasy_team_id = f"{user_id}_{match_id}"
 
@@ -101,11 +245,6 @@ def fantasy_team_results(request, match_id):
 
         players = dictfetchall(cursor)
 
-    if not players:
-        return render(request, "result.html", {
-            "error": "Fantasy team not created or match not completed."
-        })
-
     total_points = 0
     for p in players:
         if p["is_captain"]:
@@ -117,182 +256,7 @@ def fantasy_team_results(request, match_id):
 
         total_points += p["final_points"]
 
-    return render(request, "result.html", {
+    return JsonResponse({
         "players": players,
-        "total_points": round(total_points, 2),
-        "match_id": match_id
-    })
-
-
-
-@login_required
-def match_list(request):
-    """List matches with option to create fantasy team"""
-
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT 
-                m.match_id,
-                m.match_date,
-                t1.team_name AS team1,
-                t2.team_name AS team2
-            FROM matches m
-            JOIN teams t1 ON m.team_1 = t1.team_id
-            JOIN teams t2 ON m.team_2 = t2.team_id
-            ORDER BY m.match_date DESC
-        """)
-        matches = dictfetchall(cursor)
-
-    return render(request, "fantasy_match_list.html", {"matches": matches})
-
-
-@login_required
-def create_fantasy_team(request, match_id):
-    """Create fantasy team if not exists"""
-
-    user_id = request.session["user_id"]
-    fantasy_team_id = f"{user_id}_{match_id}"
-
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT 1 FROM fantasy_teams
-            WHERE fantasy_team_id = %s
-        """, [fantasy_team_id])
-
-        exists = cursor.fetchone()
-
-        if not exists:
-            cursor.execute("""
-                INSERT INTO fantasy_teams
-                (fantasy_team_id, user_id, match_id, total_points)
-                VALUES (%s, %s, %s, 0)
-            """, [fantasy_team_id, user_id, match_id])
-
-    return redirect("select_players", match_id=match_id)
-
-@login_required
-def select_players(request, match_id):
-
-    user_id = request.session["user_id"]
-    fantasy_team_id = f"{user_id}_{match_id}"
-
-    # Fetch eligible players
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT 
-                p.player_id,
-                p.player_name,
-                p.role,
-                p.cost,
-                t.team_name,
-                t.team_id
-            FROM players p
-            JOIN teams t ON p.team_id = t.team_id
-            WHERE p.team_id IN (
-                SELECT team_1 FROM matches WHERE match_id = %s
-                UNION
-                SELECT team_2 FROM matches WHERE match_id = %s
-            )
-            ORDER BY t.team_name, p.player_name
-        """, [match_id, match_id])
-
-        players = dictfetchall(cursor)
-
-    if request.method == "POST":
-        selected_players = request.POST.getlist("players")
-        captain = request.POST.get("captain")
-        vice_captain = request.POST.get("vice_captain")
-
-        # ---------- VALIDATIONS ----------
-
-        # Rule 1: Exactly 7 players
-        if len(selected_players) != 7:
-            error = "You must select exactly 7 players."
-
-        # Rule 2: Captain & Vice-Captain chosen
-        elif not captain or not vice_captain:
-            error = "You must choose a Captain and a Vice-Captain."
-
-        # Rule 3: Captain ≠ Vice-Captain
-        elif captain == vice_captain:
-            error = "Captain and Vice-Captain must be different."
-
-        # Rule 4: Captain & VC must be in selected players
-        elif captain not in selected_players or vice_captain not in selected_players:
-            error = "Captain and Vice-Captain must be selected players."
-
-        else:
-            error = None
-
-        if error:
-            return render(request, "select_players.html", {
-                "players": players,
-                "match_id": match_id,
-                "error": error
-            })
-
-        # Fetch selected player details
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT player_id, role, team_id, cost
-                FROM players
-                WHERE player_id = ANY(%s)
-            """, [selected_players])
-
-            selected_data = dictfetchall(cursor)
-
-        team_count = {}
-        role_count = {}
-        total_cost = 0
-
-        for p in selected_data:
-            team_count[p["team_id"]] = team_count.get(p["team_id"], 0) + 1
-            role_count[p["role"]] = role_count.get(p["role"], 0) + 1
-            total_cost += p["cost"]
-
-        # Rule 5: Max 4 players per team
-        if any(count > 4 for count in team_count.values()):
-            error = "Maximum 4 players allowed from a single team."
-
-        # Rule 6: Max 3 players per role
-        elif any(count > 3 for count in role_count.values()):
-            error = "Maximum 3 players allowed per role."
-
-        # Rule 7: Budget limit
-        elif total_cost > 60:
-            error = f"Total cost exceeded! Current cost: {total_cost}"
-
-        else:
-            error = None
-
-        if error:
-            return render(request, "select_players.html", {
-                "players": players,
-                "match_id": match_id,
-                "error": error
-            })
-
-        # ---------- SAVE SELECTION ----------
-
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                DELETE FROM fantasy_team_players
-                WHERE fantasy_team_id = %s
-            """, [fantasy_team_id])
-
-            for pid in selected_players:
-                is_captain = (pid == captain)
-                is_vice_captain = (pid == vice_captain)
-
-                cursor.execute("""
-                    INSERT INTO fantasy_team_players
-                    (fantasy_team_id, player_id, is_captain, is_vice_captain)
-                    VALUES (%s, %s, %s, %s)
-                """, [fantasy_team_id, pid, is_captain, is_vice_captain])
-
-        return redirect("match_list")
-
-    return render(request, "select_players.html", {
-        "players": players,
-        "match_id": match_id
+        "total_points": round(total_points, 2)
     })
