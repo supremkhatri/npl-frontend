@@ -24,7 +24,7 @@ export default function LandingPage() {
               Join Contest
             </NavLink>
             <NavLink
-              to="/my-team"
+              to="/my-teams"
               className="bg-white/10 border border-white/30 px-6 py-3 rounded-xl font-semibold hover:bg-white/20 transition"
             >
               Create Team
