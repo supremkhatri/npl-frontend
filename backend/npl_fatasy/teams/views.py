@@ -1,11 +1,13 @@
-from django.shortcuts import render
+from django.http import JsonResponse
 from django.db import connection
 
 def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
-def team_list(request):
+
+# JSON API for React
+def team_list_api(request):
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT team_id, team_name, acronym
@@ -14,4 +16,4 @@ def team_list(request):
         """)
         teams = dictfetchall(cursor)
 
-    return render(request, "teams.html", {"teams": teams})
+    return JsonResponse(teams, safe=False)
