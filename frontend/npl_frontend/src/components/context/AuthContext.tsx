@@ -1,9 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import { getCSRF, getCookie } from "../csrf"; // your helper
+import { getCSRF, getCookie } from "../csrf"; // your CSRF helper
+
+interface User {
+  username: string;
+}
 
 interface AuthContextType {
-  user: { username: string } | null;
+  user: User | null;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -13,10 +17,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Optional: check session on mount
+  // Check session on mount
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -24,9 +28,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const res = await fetch("http://127.0.0.1:8000/users/session/", {
           credentials: "include",
         });
+
         if (res.ok) {
           const data = await res.json();
-          setUser({ username: data.username });
+          // Only set user if username exists
+          if (data.username) {
+            setUser({ username: data.username });
+          } else {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
         }
       } catch (err) {
         setUser(null);
@@ -34,12 +46,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     };
+
     fetchUser();
   }, []);
 
   const login = async (username: string, password: string) => {
     await getCSRF();
     const csrfToken = getCookie("csrftoken");
+
     const res = await fetch("http://127.0.0.1:8000/users/login/", {
       method: "POST",
       headers: {
@@ -61,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (username: string, password: string) => {
     await getCSRF();
     const csrfToken = getCookie("csrftoken");
+
     const res = await fetch("http://127.0.0.1:8000/users/register/", {
       method: "POST",
       headers: {
@@ -78,10 +93,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
+    await getCSRF();
+    const csrfToken = getCookie("csrftoken");
+
     await fetch("http://127.0.0.1:8000/users/logout/", {
       method: "POST",
       credentials: "include",
+      headers: {
+        ...(csrfToken && { "X-CSRFToken": csrfToken }),
+      },
     });
+
     setUser(null);
   };
 

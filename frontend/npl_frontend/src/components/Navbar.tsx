@@ -46,10 +46,9 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
-            <NavItem to="/contests" label="Contests" scrolled={scrolled} />
             <NavItem to="/my-teams" label="My Team" scrolled={scrolled} />
             <NavItem to="/leaderboard" label="Leaderboard" scrolled={scrolled} />
-            <NavItem to="/players" label="Players" scrolled={scrolled} />
+            <NavItem to="/players" label="Teams" scrolled={scrolled} />
 
             {!user && (
               <>
@@ -96,10 +95,9 @@ const Navbar = () => {
       {menuOpen && (
         <div className="md:hidden bg-white shadow-lg">
           <div className="flex flex-col px-6 py-4 gap-4">
-            <MobileNavItem to="/contests" label="Contests" />
             <MobileNavItem to="/my-teams" label="My Team" />
             <MobileNavItem to="/leaderboard" label="Leaderboard" />
-            <MobileNavItem to="/players" label="Players" />
+            <MobileNavItem to="/players" label="Teams" />
 
             {!user && (
               <>
@@ -118,7 +116,7 @@ const Navbar = () => {
               </>
             )}
 
-            {user && (
+            {user?.username && (
               <div className="flex flex-col gap-2">
                 <span className="font-medium text-gray-700 text-center">{user.username}</span>
                 <button

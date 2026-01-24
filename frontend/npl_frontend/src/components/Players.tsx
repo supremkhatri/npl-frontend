@@ -37,7 +37,7 @@ export default function Players() {
         `http://127.0.0.1:8000/players/${acronym}/`
       );
       const data = await res.json();
-
+      console.log("Fetched players:", data);
       const elapsed = Date.now() - start;
       if (elapsed < 600) {
         await new Promise((r) => setTimeout(r, 600 - elapsed));
