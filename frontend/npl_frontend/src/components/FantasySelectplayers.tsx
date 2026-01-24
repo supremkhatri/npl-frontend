@@ -34,12 +34,11 @@ export default function FantasySelectPlayers() {
       .then((data) => {
         setPlayers(data.players);
         if (data.existing_team) {
-    setSelected(data.existing_team.players);
-    setCaptain(data.existing_team.captain);
-    setViceCaptain(data.existing_team.vice_captain);
+          setSelected(data.existing_team.players);
+          setCaptain(data.existing_team.captain);
+          setViceCaptain(data.existing_team.vice_captain);
         }
       });
-      
   }, [matchId]);
 
   const selectedPlayers = useMemo(
@@ -67,10 +66,20 @@ export default function FantasySelectPlayers() {
     return map;
   }, [selectedPlayers]);
 
+  const playersByTeam = useMemo(() => {
+    const teams: Record<number, Player[]> = {};
+    players.forEach((p) => {
+      if (!teams[p.team_id]) teams[p.team_id] = [];
+      teams[p.team_id].push(p);
+    });
+    return teams;
+  }, [players]);
+
+  const teamIds = useMemo(() => Object.keys(playersByTeam).map(Number), [playersByTeam]);
+
   const togglePlayer = (id: number) => {
     setError(null);
 
-    // remove
     if (selected.includes(id)) {
       setSelected(selected.filter((x) => x !== id));
       if (captain === id) setCaptain(null);
@@ -129,107 +138,202 @@ export default function FantasySelectPlayers() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* PLAYER POOL */}
-      <div className="lg:col-span-2">
-        <h2 className="text-xl font-bold mb-3">Available Players</h2>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Header with Rules */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Build Your Fantasy Team</h1>
+          <div className="flex flex-wrap gap-2">
+            <div className="px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+              <span className="text-xs font-medium text-blue-700">Exactly 7 players</span>
+            </div>
+            <div className="px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+              <span className="text-xs font-medium text-blue-700">Max 4 from one team</span>
+            </div>
+            <div className="px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+              <span className="text-xs font-medium text-blue-700">Max 3 per role</span>
+            </div>
+            <div className="px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+              <span className="text-xs font-medium text-blue-700">Budget ≤ 60</span>
+            </div>
+            <div className="px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200">
+              <span className="text-xs font-medium text-blue-700">1 Captain & 1 Vice-Captain</span>
+            </div>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {players.map((p) => {
-            const isSelected = selected.includes(p.player_id);
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* PLAYER POOLS - SIDE BY SIDE */}
+          <div className="xl:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {teamIds.map((teamId, idx) => {
+                const teamPlayers = playersByTeam[teamId] || [];
+                const teamName = teamPlayers[0]?.team_name || `Team ${idx + 1}`;
 
-            return (
-              <div
-                key={p.player_id}
-                onClick={() => togglePlayer(p.player_id)}
-                className={`p-3 rounded-xl border cursor-pointer text-sm
-                  ${
-                    isSelected
-                      ? "bg-red-50 border-red-500"
-                      : "bg-white hover:bg-gray-50"
-                  }`}
-              >
-                <p className="font-semibold truncate">{p.player_name}</p>
-                <p className="text-xs text-gray-500">{p.team_name}</p>
-                <p className="text-xs">{p.role}</p>
-                <p className="font-bold mt-1">₹{p.cost}</p>
+                return (
+                  <div key={teamId} className="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div className="px-5 py-4 bg-gradient-to-r from-red-600 to-blue-700 rounded-t-xl">
+                      <h2 className="text-lg font-bold text-white flex items-center justify-between">
+                        <span>{teamName}</span>
+                        <span className="text-sm font-medium bg-white/20 px-2 py-1 rounded">
+                          {(teamCount[teamId] || 0)}/{MAX_PER_TEAM}
+                        </span>
+                      </h2>
+                    </div>
+
+                    <div className="p-3 space-y-2 max-h-[600px] overflow-y-auto">
+                      {teamPlayers.map((p) => {
+                        const isSelected = selected.includes(p.player_id);
+                        const isCaptain = captain === p.player_id;
+                        const isViceCaptain = viceCaptain === p.player_id;
+
+                        return (
+                          <div
+                            key={p.player_id}
+                            onClick={() => togglePlayer(p.player_id)}
+                            className={`relative p-3 rounded-lg cursor-pointer transition-all
+                              ${isSelected
+                                ? 'bg-blue-200 border-2 border-blue-500'
+                                : 'bg-gray-50 border-2 border-transparent hover:border-gray-300'
+                              }`}
+                          >
+                            {(isCaptain || isViceCaptain) && (
+                              <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-md
+                                ${isCaptain ? 'bg-red-600' : 'bg-blue-800'}`}>
+                                {isCaptain ? 'C' : 'VC'}
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate">
+                                  {p.player_name}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-0.5 uppercase">
+                                  {p.role}
+                                </p>
+                              </div>
+                              <div className="text-right ml-3">
+                                <span className="font-bold text-lg text-blue-600">
+                                  ₹{p.cost}
+                                </span>
+                                {isSelected && (
+                                  <div className="flex justify-end mt-1">
+                                    <div className="w-4 h-4 rounded-full bg-green-600 flex items-center justify-center">
+                                      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SELECTED TEAM SIDEBAR */}
+          <div className="xl:sticky xl:top-6 h-fit">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="bg-gradient-to-r from-red-600 to-blue-700 px-5 py-4 rounded-t-xl">
+                <h2 className="text-lg font-bold text-white">Your Team</h2>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              
+              <div className="p-5">
 
-      {/* SELECTED TEAM */}
-      {/* SELECTED TEAM */}
-      <div className="sticky top-6 h-fit bg-white rounded-2xl shadow-lg p-5">
-        <h2 className="text-xl font-bold mb-4">Your Team</h2>
+                {/* Error Message */}
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <p className="ml-2 text-sm font-semibold text-red-700">{error}</p>
+                    </div>
+                  </div>
+                )}
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-blue-600 font-medium mb-1">Players Left</p>
+                    <p className="text-3xl font-bold text-blue-700">{playersLeft}</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs text-blue-600 font-medium mb-1">Budget Left</p>
+                    <p className="text-3xl font-bold text-blue-700">₹{budgetLeft}</p>
+                  </div>
+                </div>
 
-        <div className="flex justify-between text-sm mb-2">
-          <span>Players Left</span>
-          <span className="font-bold">{playersLeft}</span>
-        </div>
+                {/* Selected Players List */}
+                <div className="space-y-2 mb-5">
+                  {selectedPlayers.map((p) => (
+                    <div
+                      key={p.player_id}
+                      className="flex justify-between items-center bg-gray-50 px-3 py-3 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 truncate text-sm">{p.player_name}</p>
+                        <p className="text-xs text-gray-500">{p.team_name}</p>
+                      </div>
 
-        <div className="flex justify-between text-sm mb-4">
-          <span>Budget Left</span>
-          <span className="font-bold">₹{budgetLeft}</span>
-        </div>
+                      <div className="flex gap-2 ml-2">
+                        <button
+                          onClick={() => setCaptain(p.player_id)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                            captain === p.player_id
+                              ? 'bg-red-600 text-white'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
+                        >
+                          C
+                        </button>
 
-        {/* SELECTED PLAYERS */}
-        <div className="space-y-2 mb-4">
-          {selectedPlayers.map((p) => (
-            <div
-              key={p.player_id}
-              className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg text-sm"
-            >
-              <span className="truncate">{p.player_name}</span>
+                        <button
+                          onClick={() => setViceCaptain(p.player_id)}
+                          className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                            viceCaptain === p.player_id
+                              ? 'bg-blue-800 text-white'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
+                        >
+                          VC
+                        </button>
+                      </div>
+                    </div>
+                  ))}
 
-              <div className="flex gap-1">
+                  {/* Empty Slots */}
+                  {[...Array(playersLeft)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="text-center text-sm text-gray-400 border-2 border-dashed border-gray-300 py-4 rounded-lg bg-gray-50"
+                    >
+                      Empty Slot
+                    </div>
+                  ))}
+                </div>
+
+                
+
+                {/* Submit Button */}
                 <button
-                  onClick={() => setCaptain(p.player_id)}
-                  className={`px-2 py-0.5 rounded text-xs ${
-                    captain === p.player_id
-                      ? "bg-red-600 text-white"
-                      : "bg-gray-200"
-                  }`}
+                  onClick={submitTeam}
+                  className="w-full py-3 rounded-lg font-bold text-white bg-gradient-to-r from-red-600 to-blue-700 hover:bg-blue-700 shadow-sm transition-colors"
                 >
-                  C
-                </button>
-
-                <button
-                  onClick={() => setViceCaptain(p.player_id)}
-                  className={`px-2 py-0.5 rounded text-xs ${
-                    viceCaptain === p.player_id
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  VC
+                  Save Team
                 </button>
               </div>
             </div>
-          ))}
-
-          {/* EMPTY SLOTS */}
-          {[...Array(playersLeft)].map((_, i) => (
-            <div
-              key={i}
-              className="text-center text-xs text-gray-400 border border-dashed py-2 rounded-lg"
-            >
-              Empty Slot
-            </div>
-          ))}
+          </div>
         </div>
-
-        {error && (
-          <p className="text-sm text-red-600 font-semibold mb-3">{error}</p>
-        )}
-
-        <button
-          onClick={submitTeam}
-          className="w-full py-3 rounded-xl hover:bg-red-800 cursor-pointer bg-red-600 text-white font-bold"
-        >
-          Save Team
-        </button>
       </div>
     </div>
   );

@@ -18,10 +18,10 @@ export default function LandingPage() {
 
           <div className="mt-8 flex justify-center gap-4">
             <NavLink
-              to="/contests"
+              to="/upcoming-matches"
               className="bg-yellow-400 text-gray-900 px-6 py-3 rounded-xl font-semibold hover:bg-yellow-300 transition"
             >
-              Join Contest
+              Upcoming Matches
             </NavLink>
             <NavLink
               to="/my-teams"
