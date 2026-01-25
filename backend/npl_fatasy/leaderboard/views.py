@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from datetime import datetime
-from django.db import connection, IntegrityError
+from django.db import connection
 
 
 def dictfetchall(cursor):
