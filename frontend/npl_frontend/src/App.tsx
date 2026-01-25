@@ -20,6 +20,8 @@ import AdminPlayers from "./admin/Players";
 import AdminMatches from "./admin/Matches";
 import AdminNavbar from "./admin/Navbar";
 import Upcomingmatches from "./components/Upcomingmatches.tsx";
+import MatchdayLeaderboard from "./components/Matchdayleaderboard.tsx";
+import OverallLeaderboard from "./components/Leaderboard.tsx";
 
 function App() {
   const location = useLocation();
@@ -41,6 +43,11 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/players" element={<Players />} />
           <Route path="/upcoming-matches" element={<Upcomingmatches />} />
+          <Route path="/leaderboard" element={<OverallLeaderboard />} />
+          <Route
+            path="/leaderboard/match/:matchId"
+            element={<MatchdayLeaderboard />}
+          />
           <Route
             path="/fantasy/select/:matchId"
             element={<FantasySelectPlayers />}
