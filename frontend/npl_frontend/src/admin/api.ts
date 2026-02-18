@@ -1,4 +1,4 @@
-export const API_BASE = "http://127.0.0.1:8000/admin_panel/";
+export const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/admin_panel/`;
 
 // CSRF helper
 export function getCookie(name: string) {

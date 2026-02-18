@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface Team {
   team_name: string;
   acronym: string;
@@ -19,7 +21,7 @@ export default function Players() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/teams/list/")
+    fetch(`${API_BASE_URL}/teams/list/`)
       .then((res) => res.json())
       .then(setTeams)
       .catch(console.error);
@@ -34,7 +36,7 @@ export default function Players() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/players/${acronym}/`
+        `${API_BASE_URL}/players/${acronym}/`
       );
       const data = await res.json();
       console.log("Fetched players:", data);

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface Player {
   player_name: string;
   role: string;
@@ -24,7 +26,7 @@ export default function FantasyResults() {
     const fetchResults = async () => {
       try {
         const res = await fetch(
-          `http://127.0.0.1:8000/fantasy/results/${matchId}/`,
+          `${API_BASE_URL}/fantasy/results/${matchId}/`,
           {
             credentials: "include", // ✅ REQUIRED
           }

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getCSRF, getCookie } from "./csrf";
+import { useAuth } from "./context/AuthContext"; 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 interface Match {
   id: number;
@@ -14,13 +17,13 @@ function Upcomingmatches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/matches/", {
+        const res = await fetch(`${API_BASE_URL}/matches/`, {
           credentials: "include",
         });
 
@@ -48,7 +51,7 @@ function Upcomingmatches() {
     const csrfToken = getCookie("csrftoken");
 
     const res = await fetch(
-      `http://127.0.0.1:8000/fantasy/create/${match.id}/`,
+      `${API_BASE_URL}/fantasy/create/${match.id}/`,
       {
         method: "POST",
         credentials: "include",
@@ -132,7 +135,13 @@ function Upcomingmatches() {
                         : "bg-indigo-600 hover:bg-indigo-700 text-white"
                     }`}
                   >
-                    {isCompleted ? "View Results →" : "Create Team →"}
+                    {user ? (
+                      <>
+                        {isCompleted ? "View Results →" : "Create Team →"}
+                      </>
+                    ) : (
+                      <span className="text-sm">Login to Create Team</span>
+                    )}
                   </button>
                 </div>
               </div>

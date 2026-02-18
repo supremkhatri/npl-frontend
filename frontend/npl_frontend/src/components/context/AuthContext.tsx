@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import  { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { getCSRF, getCookie } from "../csrf"; // your CSRF helper
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 interface User {
   username: string;
@@ -25,7 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchUser = async () => {
       try {
         await getCSRF();
-        const res = await fetch("http://127.0.0.1:8000/users/session/", {
+        const res = await fetch(`${API_BASE_URL}/users/session/`, {
           credentials: "include",
         });
 
@@ -54,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await getCSRF();
     const csrfToken = getCookie("csrftoken");
 
-    const res = await fetch("http://127.0.0.1:8000/users/login/", {
+    const res = await fetch(`${API_BASE_URL}/users/login/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await getCSRF();
     const csrfToken = getCookie("csrftoken");
 
-    const res = await fetch("http://127.0.0.1:8000/users/register/", {
+    const res = await fetch(`${API_BASE_URL}/users/register/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -96,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await getCSRF();
     const csrfToken = getCookie("csrftoken");
 
-    await fetch("http://127.0.0.1:8000/users/logout/", {
+    await fetch(`${API_BASE_URL}/users/logout/`, {
       method: "POST",
       credentials: "include",
       headers: {

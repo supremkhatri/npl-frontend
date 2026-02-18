@@ -1,5 +1,5 @@
 export async function getCSRF() {
-  await fetch("http://127.0.0.1:8000/users/csrf/", {
+  await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/csrf/`, {
     credentials: "include",
   });
 }

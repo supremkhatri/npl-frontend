@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface Player {
   player_name: string;
   team_name: string;
@@ -17,7 +19,7 @@ export default function FantasyViewTeam() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/fantasy/team/${matchId}/`, {
+    fetch(`${API_BASE_URL}/fantasy/team/${matchId}/`, {
       credentials: "include",
     })
       .then((res) => res.json())

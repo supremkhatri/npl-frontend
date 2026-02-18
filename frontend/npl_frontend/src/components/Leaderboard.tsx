@@ -72,6 +72,8 @@
 
 import { useEffect, useState } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface Match {
   match_id: number;
   team1: string;
@@ -94,7 +96,7 @@ export default function OverallLeaderboard() {
 
   // Fetch matches
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/fantasy/matches/")
+    fetch(`${API_BASE_URL}/fantasy/matches/`)
       .then(res => res.json())
       .then(data => setMatches(data.matches))
       .catch(console.error);
@@ -106,8 +108,8 @@ export default function OverallLeaderboard() {
 
     const url =
       selectedMatch === "all"
-        ? "http://127.0.0.1:8000/leaderboard/api/overall/"
-        : `http://127.0.0.1:8000/leaderboard/api/match/${selectedMatch}/`;
+        ? `${API_BASE_URL}/leaderboard/api/overall/`
+        : `${API_BASE_URL}/leaderboard/api/match/${selectedMatch}/`;
 
     fetch(url)
       .then(res => res.json())

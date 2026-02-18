@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getCSRF, getCookie } from "./csrf";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface Player {
   player_id: number;
   player_name: string;
@@ -27,7 +29,7 @@ export default function FantasySelectPlayers() {
   const MAX_PER_ROLE = 3;
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/fantasy/select/${matchId}/`, {
+    fetch(`${API_BASE_URL}/fantasy/select/${matchId}/`, {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -117,7 +119,7 @@ export default function FantasySelectPlayers() {
     const csrfToken = getCookie("csrftoken");
 
     const res = await fetch(
-      `http://127.0.0.1:8000/fantasy/select/${matchId}/`,
+      `${API_BASE_URL}/fantasy/select/${matchId}/`,
       {
         method: "POST",
         headers: {

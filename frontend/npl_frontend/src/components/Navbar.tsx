@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Menu, X, Trophy, User, LogOut } from "lucide-react";
+import { Menu, X, Trophy, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "./context/AuthContext";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -46,7 +47,6 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
-            <NavItem to="/my-teams" label="My Team" scrolled={scrolled} />
             <NavItem to="/leaderboard" label="Leaderboard" scrolled={scrolled} />
             <NavItem to="/players" label="Teams" scrolled={scrolled} />
 
@@ -67,16 +67,49 @@ const Navbar = () => {
               </>
             )}
 
+            {/* ── Styled user profile dropdown ── */}
             {user && (
-              <div className="flex items-center gap-4">
-                <User className="text-gray-700" />
-                <span className="font-medium text-gray-700">{user.username}</span>
+              <div className="relative">
                 <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-500 transition"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition ${
+                    scrolled
+                      ? "border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-800"
+                      : "border-white/30 bg-white/10 hover:bg-white/20 text-white"
+                  }`}
                 >
-                  <LogOut size={16} /> Logout
+                  {/* Avatar circle */}
+                  <span className="w-7 h-7 rounded-full bg-yellow-400 text-gray-900 flex items-center justify-center font-bold text-sm uppercase">
+                    {user.username.charAt(0)}
+                  </span>
+                  <span className="font-medium text-sm">{user.username}</span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
+
+                {/* Dropdown */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-xs text-gray-400">Signed in as</p>
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {user.username}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition font-medium"
+                    >
+                      <LogOut size={15} />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -84,7 +117,7 @@ const Navbar = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden text-white"
+            className={`md:hidden ${scrolled ? "text-gray-800" : "text-white"}`}
           >
             {menuOpen ? <X /> : <Menu />}
           </button>
@@ -95,7 +128,6 @@ const Navbar = () => {
       {menuOpen && (
         <div className="md:hidden bg-white shadow-lg">
           <div className="flex flex-col px-6 py-4 gap-4">
-            <MobileNavItem to="/my-teams" label="My Team" />
             <MobileNavItem to="/leaderboard" label="Leaderboard" />
             <MobileNavItem to="/players" label="Teams" />
 
@@ -116,12 +148,23 @@ const Navbar = () => {
               </>
             )}
 
+            {/* ── Styled mobile user section ── */}
             {user?.username && (
-              <div className="flex flex-col gap-2">
-                <span className="font-medium text-gray-700 text-center">{user.username}</span>
+              <div className="border-t border-gray-100 pt-3 flex flex-col gap-2">
+                <div className="flex items-center gap-3 px-1">
+                  <span className="w-9 h-9 rounded-full bg-yellow-400 text-gray-900 flex items-center justify-center font-bold text-sm uppercase">
+                    {user.username.charAt(0)}
+                  </span>
+                  <div>
+                    <p className="text-xs text-gray-400">Signed in as</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {user.username}
+                    </p>
+                  </div>
+                </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center gap-1 bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-500 transition"
+                  className="flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-semibold hover:bg-red-100 transition"
                 >
                   <LogOut size={16} /> Logout
                 </button>

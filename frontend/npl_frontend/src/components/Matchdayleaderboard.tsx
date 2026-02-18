@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface MatchdayRow {
   rank: number;
   user_id: number;
@@ -15,7 +17,7 @@ export default function MatchdayLeaderboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/leaderboard/api/matchday/${matchId}/`)
+    fetch(`${API_BASE_URL}/leaderboard/api/matchday/${matchId}/`)
       .then(res => {
         if (!res.ok) throw new Error("Failed to load matchday leaderboard");
         return res.json();

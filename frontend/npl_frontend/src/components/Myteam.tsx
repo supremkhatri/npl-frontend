@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../components/context/AuthContext";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+
 interface Match {
   id: number;
   teams: string;
@@ -24,7 +26,7 @@ export default function MyTeams() {
 
     const fetchMatches = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/matches/", {
+        const res = await fetch(`${API_BASE_URL}/matches/`, {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to fetch matches");
@@ -43,7 +45,7 @@ export default function MyTeams() {
 
   const handleTeamClick = async (matchId: number) => {
     try {
-      const csrfRes = await fetch("http://127.0.0.1:8000/users/csrf/", {
+      await fetch(`${API_BASE_URL}/users/csrf/`, {
         credentials: "include",
       });
 
@@ -53,7 +55,7 @@ export default function MyTeams() {
         ?.split("=")[1];
 
       const res = await fetch(
-        `http://127.0.0.1:8000/fantasy/create/${matchId}/`,
+        `${API_BASE_URL}/fantasy/create/${matchId}/`,
         {
           method: "POST",
           credentials: "include",
