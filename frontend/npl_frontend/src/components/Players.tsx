@@ -69,96 +69,106 @@ export default function Players() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold mb-8 text-gray-900">
-        Teams
-      </h1>
+    <div className="min-h-screen bg-gray-50 pt-24 pb-20 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row items-baseline justify-between gap-4 mb-12">
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+            <span className="w-2 h-8 bg-brand-red rounded-full"></span>
+            Teams
+          </h1>
+          <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Select a squad to view </p>
+        </div>
 
-      {/* Teams */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-12">
-        {teams.map((team) => (
-          <button
-            key={team.acronym}
-            onClick={() => loadPlayers(team.acronym)}
-            className={`p-5 rounded-2xl border text-left cursor-pointer transition-all duration-200 shadow-md
-              ${
-                selectedTeam === team.acronym
-                  ? "bg-gradient-to-br from-red-600 to-red-400 text-white shadow-lg scale-[1.02]"
-                  : "bg-white hover:shadow-lg hover:scale-[1.02]"
-              }`}
-          >
-            <div className="text-lg font-semibold">
-              {team.team_name}
+        {/* Teams Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+          {teams.map((team) => (
+            <button
+              key={team.acronym}
+              onClick={() => loadPlayers(team.acronym)}
+              className={`group relative p-8 rounded-[32px] border-2 text-left cursor-pointer transition-all duration-300 overflow-hidden
+                ${
+                  selectedTeam === team.acronym
+                    ? "bg-brand-red border-brand-red text-white shadow-xl shadow-brand-red/20 scale-[1.02]"
+                    : "bg-white border-gray-100 hover:border-brand-red/30 hover:shadow-lg hover:scale-[1.02]"
+                }`}
+            >
+              <div className={`text-xl font-black mb-1 transition-colors ${selectedTeam === team.acronym ? "text-white" : "text-gray-900 group-hover:text-brand-red"}`}>
+                {team.team_name}
+              </div>
+              <div className={`text-sm font-bold uppercase tracking-widest opacity-60`}>
+                {team.acronym}
+              </div>
+              
+              {/* Decorative Element */}
+              <div className={`absolute -right-4 -bottom-4 w-20 h-20 bg-current opacity-[0.03] rounded-full transition-transform duration-500 group-hover:scale-150`}></div>
+            </button>
+          ))}
+        </div>
+
+        {/* Players Section */}
+        {selectedTeam && (
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-6">
+              <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tight flex items-center gap-3">
+                <span className="text-brand-red text-3xl"></span> {selectedTeam} Squad
+              </h2>
+              <div className="text-gray-400 font-bold text-sm bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-xs">
+                {players.length} Players Found
+              </div>
             </div>
-            <div className="text-xs opacity-80">
-              {team.acronym}
-            </div>
-          </button>
-        ))}
-      </div>
 
-      {/* Players */}
-      {selectedTeam && (
-        <>
-          <h2 className="text-2xl font-bold mb-6 text-gray-900">
-            Players – {selectedTeam}
-          </h2>
+            {loading && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div
+                    key={i}
+                    className="h-48 bg-white border border-gray-100 rounded-[40px] animate-pulse"
+                  />
+                ))}
+              </div>
+            )}
 
-          {loading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="h-32 bg-gray-200 rounded-2xl animate-pulse"
-                />
-              ))}
-            </div>
-          )}
-
-          {!loading && players.length === 0 && (
+            {!loading && players.length === 0 && (
             <p className="text-gray-500">
               No players found for this team.
             </p>
-          )}
+            )}
 
-          {!loading && players.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {players.map((player) => (
-                <div
-                  key={player.player_id}
-                  className="relative rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm p-5
-                    hover:shadow-md transition duration-200
-                    border border-transparent
-                    hover:border-gray-100"
-                >
-                  <div className="text-xl font-bold mb-2">
-                    {player.player_name}
-                  </div>
-
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${roleColor(
-                      player.role
-                    )}`}
+            {!loading && players.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {players.map((player) => (
+                  <div
+                    key={player.player_id}
+                    className="relative rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm p-5
+                      hover:shadow-md transition duration-200
+                      border border-transparent
+                      hover:border-gray-100"
                   >
-                    {player.role}
-                  </span>
+                    <div className="text-xl font-bold mb-2">
+                      {player.player_name}
+                    </div>
 
-                  <div className="absolute top-5 right-5">
-                    <div className="inline-flex items-center gap-2 bg-black text-white px-3 py-1 rounded-full text-sm font-semibold">
-                      <span>₹</span>
-                      <span>{player.cost}</span>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${roleColor(
+                        player.role
+                      )}`}
+                    >
+                      {player.role}
+                    </span>
+
+                    <div className="absolute top-5 right-5">
+                      <div className="inline-flex items-center gap-2 bg-black text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        <span>₹</span>
+                        <span>{player.cost}</span>
+                      </div>
                     </div>
                   </div>
-
-                  {/* <div className="mt-4 text-xs text-gray-500">
-                    Fantasy score coming soon...
-                  </div> */}
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

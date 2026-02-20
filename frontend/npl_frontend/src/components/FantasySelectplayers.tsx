@@ -21,6 +21,7 @@ export default function FantasySelectPlayers() {
   const [selected, setSelected] = useState<number[]>([]);
   const [captain, setCaptain] = useState<number | null>(null);
   const [viceCaptain, setViceCaptain] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const MAX_PLAYERS = 7;
@@ -115,28 +116,39 @@ export default function FantasySelectPlayers() {
     if (captain === viceCaptain)
       return setError("Captain and Vice-Captain must be different");
 
-    await getCSRF();
-    const csrfToken = getCookie("csrftoken");
+    setSubmitting(true);
+    try {
+      await getCSRF();
+      const csrfToken = getCookie("csrftoken");
 
-    const res = await fetch(
-      `${API_BASE_URL}/fantasy/select/${matchId}/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrfToken && { "X-CSRFToken": csrfToken }),
+      const res = await fetch(
+        `${API_BASE_URL}/fantasy/select/${matchId}/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(csrfToken && { "X-CSRFToken": csrfToken }),
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            players: selected,
+            captain,
+            vice_captain: viceCaptain,
+          }),
         },
-        credentials: "include",
-        body: JSON.stringify({
-          players: selected,
-          captain,
-          vice_captain: viceCaptain,
-        }),
-      },
-    );
+      );
 
-    if (res.ok) navigate(`/fantasy/view/${matchId}`);
-    else setError("Failed to save team");
+      if (res.ok) {
+        navigate(`/fantasy/view/${matchId}`);
+      } else {
+        setError("Failed to save team");
+        setSubmitting(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred while saving");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -324,13 +336,25 @@ export default function FantasySelectPlayers() {
                 </div>
 
                 
-
+                  
                 {/* Submit Button */}
                 <button
                   onClick={submitTeam}
-                  className="w-full py-3 rounded-lg font-bold text-white bg-gradient-to-r from-red-600 to-blue-700 hover:bg-blue-700 shadow-sm transition-colors"
+                  disabled={submitting}
+                  className={`w-full py-4 rounded-xl font-black text-white px-6 shadow-lg transition-all duration-300 flex items-center justify-center gap-3
+                    ${submitting 
+                      ? 'bg-gray-400 cursor-not-allowed scale-95' 
+                      : 'bg-linear-to-r from-brand-red to-brand-blue hover:shadow-xl active:scale-[0.98] cursor-pointer'
+                    }`}
                 >
-                  Save Team
+                  {submitting ? (
+                    <>
+                      <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span className="uppercase tracking-widest text-sm">Saving Squad...</span>
+                    </>
+                  ) : (
+                    <span className="uppercase tracking-widest text-sm">Deploy Squad</span>
+                  )}
                 </button>
               </div>
             </div>

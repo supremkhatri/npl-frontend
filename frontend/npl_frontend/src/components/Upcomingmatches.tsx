@@ -72,75 +72,88 @@ function Upcomingmatches() {
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">
-          Upcoming Matches
-        </h2>
-        <div className="bg-red-100 p-3 rounded-full">
-          <CalendarDays className="text-red-600 w-6 h-6" />
+    <section className="max-w-7xl mx-auto px-6 py-24">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-16">
+        <div>
+          <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+            Upcoming Battles
+          </h2>
+          <p className="mt-2 text-gray-500 font-medium">Draft your team before the first ball is bowled.</p>
+        </div>
+        <div className="bg-linear-to-tr from-brand-red to-brand-red-dark p-4 rounded-2xl shadow-lg transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+          <CalendarDays className="text-white w-7 h-7" />
         </div>
       </div>
 
       {loading && (
         <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600"></div>
+          <div className="animate-spin rounded-full h-14 w-14 border-4 border-gray-100 border-t-brand-red"></div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-          <p className="text-red-600 font-medium">{error}</p>
+        <div className="bg-red-50 border border-brand-red/20 rounded-3xl p-8 text-center soft-shadow mb-12">
+          <p className="text-brand-red font-bold text-lg">{error}</p>
         </div>
       )}
 
       {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {matches.map((match) => {
-            const isCompleted = match.status === "Completed";
+            const isCompleted = match.status.toLowerCase() === "completed";
 
             return (
               <div
                 key={match.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                className="group bg-white rounded-[32px] soft-shadow border border-gray-100 overflow-hidden hover-lift transition-all duration-500"
               >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="font-bold text-gray-900 text-lg leading-tight flex-1">
-                      {match.teams}
-                    </h3>
+                <div className="relative p-8">
+                  {/* Status Badge */}
+                  <div className="absolute top-8 right-8">
                     <span
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap ml-2 ${
+                      className={`text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border ${
                         isCompleted
-                          ? "bg-green-100 text-green-700 border border-green-200"
-                          : "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                          ? "bg-green-50 text-green-600 border-green-100"
+                          : "bg-brand-blue/5 text-brand-blue border-brand-blue/10"
                       }`}
                     >
                       {match.status}
                     </span>
                   </div>
 
-                  <div className="flex items-center text-gray-500 text-sm mb-6">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <div className="mb-8 pr-16 text-left">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Match # {match.id}</p>
+                    <h3 className="font-extrabold text-gray-900 text-2xl leading-tight group-hover:text-brand-red transition-colors duration-300">
+                      {match.teams}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-gray-500 font-bold text-sm mb-10 bg-gray-50 p-3 rounded-2xl">
+                    <div className="bg-white p-2 rounded-lg shadow-xs">
+                      <svg className="w-5 h-5 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
                     {match.time}
                   </div>
 
                   <button
                     onClick={() => handleCreateOrView(match)}
-                    className={`w-full py-3 rounded-lg font-bold transition-all duration-200 ${
+                    className={`w-full py-5 rounded-2xl font-extrabold text-lg transition-all duration-300 shadow-sm hover:shadow-lg active:scale-95 ${
                       isCompleted
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        ? "bg-brand-blue-dark text-white hover:bg-brand-blue"
+                        : "bg-brand-red text-white hover:bg-brand-red-dark"
                     }`}
                   >
                     {user ? (
-                      <>
-                        {isCompleted ? "View Results →" : "Create Team →"}
-                      </>
+                      <div className="flex items-center justify-center gap-2">
+                        <span>{isCompleted ? "Review Match" : "Draft Squad"}</span>
+                        <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </div>
                     ) : (
-                      <span className="text-sm">Login to Create Team</span>
+                      <span className="text-sm">Sign in to Compete</span>
                     )}
                   </button>
                 </div>
